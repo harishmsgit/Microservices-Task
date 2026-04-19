@@ -1,0 +1,75 @@
+services:
+  user-service:
+    build:
+      context: ./Microservices/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "3000:3000"
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  product-service:
+    build:
+      context: ./Microservices/product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    ports:
+      - "3001:3001"
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  order-service:
+    build:
+      context: ./Microservices/order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    ports:
+      - "3002:3002"
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  gateway-service:
+    build:
+      context: ./Microservices/gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "3003:3003"
+    depends_on:
+      user-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  microservices-net:
+    driver: bridge
